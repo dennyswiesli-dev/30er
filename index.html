@@ -128,7 +128,7 @@ button{
 button:active{transform:scale(.96)}
 .btn-primary{background:var(--red);color:#fff;box-shadow:inset 0 -3px 0 var(--red-dark), var(--shadow)}
 .btn-ivory{background:var(--ivory);color:var(--pip);box-shadow:inset 0 -3px 0 rgba(0,0,0,.15)}
-.btn-ghost{background:transparent;color:var(--ivory-dim);border:2px solid rgba(248,244,230,.25)}
+.btn-ghost{background:rgba(248,244,230,.06);color:var(--ivory);border:2px solid rgba(248,244,230,.45)}
 .btn-wide{width:100%}
 button:disabled{opacity:.4;cursor:not-allowed}
 
@@ -158,14 +158,14 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .opt .txt{font-weight:700;font-size:.9rem}
 .opt .txt small{display:block;font-weight:600;color:var(--ivory-dim);font-size:.75rem;line-height:1.35}
 .seg{display:flex;gap:8px}
-.seg button{flex:1;border-radius:10px;background:rgba(0,0,0,.15);color:var(--ivory-dim);font-size:.78rem;padding:12px 10px;text-align:left;border:2px solid rgba(248,244,230,.2);font-weight:700;line-height:1.35}
+.seg button{flex:1;border-radius:10px;background:rgba(248,244,230,.06);color:var(--ivory);font-size:.78rem;padding:12px 10px;text-align:left;border:2px solid rgba(248,244,230,.4);font-weight:700;line-height:1.35}
 .seg button small{display:block;font-weight:600;color:var(--ivory-dim);margin-top:3px}
 .seg button.on{background:rgba(217,164,65,.12);border-color:var(--gold);color:var(--gold)}
 .seg button.on small{color:var(--ivory-dim)}
 .variant-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:4px}
 .variant-grid button{
-  padding:10px 0;border-radius:10px;background:transparent;color:var(--ivory-dim);
-  border:2px solid rgba(248,244,230,.25);font-size:.95rem;
+  padding:10px 0;border-radius:10px;background:rgba(248,244,230,.06);color:var(--ivory);
+  border:2px solid rgba(248,244,230,.45);font-size:.95rem;
 }
 .variant-grid button.on{background:var(--gold);color:var(--pip);border-color:var(--gold)}
 .variant-grid button small{display:block;font-size:.6rem;font-weight:700;opacity:.8}
@@ -269,7 +269,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .brand-title{display:flex;align-items:center;justify-content:center;gap:10px}
 .brand-logo{width:48px;height:48px;border-radius:12px;box-shadow:0 3px 0 rgba(0,0,0,.35);flex:none}
 .tabs{display:flex;gap:8px;justify-content:center;margin:0 0 14px}
-.tab{flex:1;max-width:160px;background:transparent;color:var(--ivory-dim);border:2px solid rgba(248,244,230,.25);box-shadow:none;font-size:.9rem;padding:10px 12px}
+.tab{flex:1;max-width:160px;background:rgba(248,244,230,.06);color:var(--ivory);border:2px solid rgba(248,244,230,.45);box-shadow:none;font-size:.9rem;padding:10px 12px}
 .tab.on{background:var(--gold);color:var(--pip);border-color:var(--gold)}
 .score-list{list-style:none;margin-top:6px}
 .score-list li{display:flex;align-items:center;gap:10px;background:rgba(248,244,230,.08);border-radius:10px;padding:10px 12px;margin-bottom:8px}
@@ -343,6 +343,20 @@ tfoot td{border-top:2px solid rgba(248,244,230,.3);font-weight:800;color:var(--g
 /* ---------- Yatzy ---------- */
 .yatzy-table td.ycell{padding:4px 6px}
 .yatzy-table th.ycur{color:var(--gold)}
+.yatzy-table thead th{position:sticky;top:0;background:var(--felt-dark);z-index:2}
+.lives-strip{display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;-webkit-overflow-scrolling:touch}
+.lives-chip{flex:none;min-width:78px;background:var(--ivory);color:var(--pip);border-radius:10px;padding:16px 12px 8px;text-align:center;position:relative}
+.lives-chip.current{outline:2px solid var(--gold)}
+.lives-chip.dead{opacity:.5;filter:grayscale(1)}
+.lives-chip .n{font-weight:800;font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lives-chip .v{font-family:'Bungee',cursive;font-size:1.15rem;line-height:1.2}
+.lives-chip .v.neg{color:var(--red)}
+.lives-chip.current::before{
+  content:'AM ZUG';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  background:var(--gold);color:var(--pip);
+  font-size:.5rem;font-weight:800;letter-spacing:.06em;
+  padding:2px 6px;border-bottom-left-radius:6px;border-bottom-right-radius:6px;white-space:nowrap;
+}
 .yatzy-table td.ycell select{
   width:64px;padding:8px 2px;text-align:center;text-align-last:center;font-size:.9rem;border-radius:8px;
   background:rgba(248,244,230,.9);color:var(--pip);font-weight:800;border:none;
@@ -1351,16 +1365,13 @@ function render30(){
   const activeIdx = isInit ? game30.initIdx : game30.currentIdx;
   const cur = game30.players[activeIdx];
 
-  const cards = game30.players.map((p,i)=>{
-    const shielded = !isInit && game30.zeroRule && p.lives!==null && p.lives<0;
-    const fx = game30.msg && game30.msg.hitIdx===i ? (game30.msg.fx||'') : '';
+  const livesStrip = `<div class="lives-strip">${game30.players.map((p,i)=>{
     const livesTxt = !p.alive ? '✕' : (p.lives===null ? '–' : p.lives);
-    return `
-    <div class="player-card ${i===activeIdx?'current':''} ${p.alive?'':'dead'} ${shielded?'shield':''} ${fx}">
-      <span class="pname">${p.alive?'':'💀 '}${esc(p.name)}${shielded?'<small>🛡 GESCHÜTZT (unter 0)</small>':''}</span>
-      <span class="plives ${p.lives!==null&&p.lives<0?'neg':''}">${livesTxt}<small>LEBEN</small></span>
+    return `<div class="lives-chip ${i===activeIdx?'current':''} ${p.alive?'':'dead'}">
+      <div class="n">${p.alive?'':'💀 '}${esc(p.name)}</div>
+      <div class="v ${p.lives!==null&&p.lives<0?'neg':''}">${livesTxt}</div>
     </div>`;
-  }).join('');
+  }).join('')}</div>`;
 
   let action='';
   if(isInit){
@@ -1415,18 +1426,19 @@ function render30(){
   }
 
   const dirLabel = game30.direction==='next' ? 'Abzüge →' : 'Abzüge ←';
+  const roundNum = Math.ceil(game30.turn / game30.players.length);
   const modeLabel = isInit
     ? `Eröffnungsrunde · Startleben würfeln`
     : (game30.zeroRule
-      ? `Zug ${game30.turn} · Ende bei ${game30.zeroLimit} unter 0 (aktuell ${underZeroCount30()})`
-      : `Zug ${game30.turn} · ${livingCount30()} von ${game30.players.length} übrig`);
+      ? `Runde ${roundNum} · Zug ${game30.turn} · Ende bei ${game30.zeroLimit} unter 0 (aktuell ${underZeroCount30()})`
+      : `Runde ${roundNum} · Zug ${game30.turn} · ${livingCount30()} von ${game30.players.length} übrig`);
 
   app.innerHTML = `
     ${brandTitle(`${game30.target}er&#8209;Spiel`)}
     <div class="sub">${modeLabel} · ${dirLabel}</div>
+    ${livesStrip}
     ${game30.msg?`<div class="banner ${game30.msg.type}">${game30.msg.text}${game30.msg.quip?`<span class="quip">${game30.msg.quip}</span>`:''}</div>`:''}
     ${action}
-    <div class="panel"><h2>Am Tisch</h2>${cards}</div>
     ${logHTML30()}
     <div class="toolbar">
       <button class="btn-ghost" onclick="undo30()" ${history30.length?'':'disabled'}>↩ Rückgängig</button>
@@ -2380,27 +2392,34 @@ function renderGameYatzy(){
   }
 
   const upperSumCells = gameYatzy.players.map((p,pi)=>`<td>${upperSumYatzy(gameYatzy.scores[pi])}</td>`).join('');
+  const upperDiffTotal = (scores)=>YATZY_CATS.filter(c=>c.section==='upper' && scores[c.id]!==null && scores[c.id]!==undefined)
+    .reduce((s,c)=>s+(scores[c.id]-upperIdealYatzy(c.id)),0);
+  const diffTotalTag = (scores)=>{
+    const t = upperDiffTotal(scores);
+    if(t===0) return '';
+    return `<small style="display:block;font-size:.62rem;font-weight:800;color:${t<0?'var(--red)':'var(--green)'}">${t>0?'+':''}${t} ges.</small>`;
+  };
   const bonusCells = gameYatzy.players.map((p,pi)=>{
     const scores = gameYatzy.scores[pi];
     const sum = upperSumYatzy(scores);
     const bonus = upperBonusYatzy(scores);
     const remaining = Math.max(0, UPPER_BONUS_THRESHOLD - sum);
-    if(bonus>0) return `<td>+${bonus}</td>`;
-    if(remaining<=0) return `<td>0</td>`;
+    if(bonus>0) return `<td>+${bonus}${diffTotalTag(scores)}</td>`;
+    if(remaining<=0) return `<td>0${diffTotalTag(scores)}</td>`;
     const openCats = upperCatsOpenYatzy(scores);
     if(!openCats.length){
-      return `<td><span style="color:var(--red);font-weight:700;font-size:.68rem">verpasst</span></td>`;
+      return `<td><span style="color:var(--red);font-weight:700;font-size:.68rem">verpasst</span>${diffTotalTag(scores)}</td>`;
     }
     const maxRemaining = openCats.reduce((s,c)=>s+UPPER_CAT_MULTIPLIER[c.id]*5, 0);
     if(remaining > maxRemaining){
-      return `<td><span style="color:var(--red);font-weight:700;font-size:.68rem">nicht mehr erreichbar</span></td>`;
+      return `<td><span style="color:var(--red);font-weight:700;font-size:.68rem">nicht mehr erreichbar</span>${diffTotalTag(scores)}</td>`;
     }
     const avgNeeded = remaining/openCats.length;
-    return `<td><span style="color:var(--ivory-dim);font-weight:600;font-size:.68rem">noch ${remaining} · Ø ${avgNeeded%1===0?avgNeeded:avgNeeded.toFixed(1)}/Kat.</span></td>`;
+    return `<td><span style="color:var(--ivory-dim);font-weight:600;font-size:.68rem">noch ${remaining} · Ø ${avgNeeded%1===0?avgNeeded:avgNeeded.toFixed(1)}/Kat.</span>${diffTotalTag(scores)}</td>`;
   }).join('');
   const totalCells = gameYatzy.players.map((p,pi)=>`<td>${totalYatzy(gameYatzy.scores[pi])}</td>`).join('');
 
-  const headRow = `<th>Kategorie</th>${gameYatzy.players.map((p,pi)=>`<th class="${pi===gameYatzy.currentIdx&&!gameYatzy.finished?'ycur':''}">${esc(p)}${pi===gameYatzy.currentIdx&&!gameYatzy.finished?' 🎲':''}</th>`).join('')}`;
+  const headRow = `<th>Kategorie</th>${gameYatzy.players.map((p,pi)=>`<th class="${pi===gameYatzy.currentIdx&&!gameYatzy.finished?'ycur':''}">${esc(p)}</th>`).join('')}`;
 
   app.innerHTML = `
     ${brandTitle('Yatzy')}
