@@ -1850,26 +1850,29 @@ function renderGameTutto(){
   const liveTotals = liveTotalsTutto();
   const curIdx = gameTutto.currentIdx;
   const curName = gameTutto.players[curIdx];
-  const order = gameTutto.players.map((p,i)=>({name:p, pts:liveTotals[i], idx:i})).sort((a,b)=>b.pts-a.pts);
-  const max = Math.max(gameTutto.target, order[0]?order[0].pts:0);
-  const standings = order.map((o,rank)=>{
-    const pct = Math.max(0, Math.min(100, (o.pts/max)*100));
-    const isCurrent = o.idx===curIdx;
+  const max = Math.max(gameTutto.target, ...liveTotals);
+  let leaderIdx = 0;
+  liveTotals.forEach((t,i)=>{ if(t>liveTotals[leaderIdx]) leaderIdx=i; });
+  const standings = gameTutto.players.map((name,i)=>{
+    const pts = liveTotals[i];
+    const pct = Math.max(0, Math.min(100, (pts/max)*100));
+    const isCurrent = i===curIdx;
+    const isLeader = i===leaderIdx && pts>0;
     return `
-    <div class="standing ${rank===0 && o.pts>0 ? 'leader':''} ${isCurrent?'current':''}">
-      <div class="pos">${rank+1}</div>
+    <div class="standing ${isLeader?'leader':''} ${isCurrent?'current':''}">
+      <div class="pos">${i+1}</div>
       <div style="flex:1;min-width:0">
-        <div class="name">${esc(o.name)}${gameTutto.turnTaken[o.idx]?' <small style="color:var(--ivory-dim);font-weight:600">✓ dran gewesen</small>':''}</div>
+        <div class="name">${esc(name)}${gameTutto.turnTaken[i]?' <small style="color:var(--ivory-dim);font-weight:600">✓ dran gewesen</small>':''}</div>
         <div class="bar"><i style="width:${pct}%"></i></div>
       </div>
       ${isCurrent?'<span class="turn-tag">AM ZUG</span>':''}
-      <div class="pts">${fmtNum(o.pts)}</div>
+      <div class="pts">${fmtNum(pts)}</div>
     </div>`;
   }).join('');
 
   const rn = gameTutto.rounds.length+1;
 
-  const quickVals = [-1000,50,150,300,500,1000,2000];
+  const quickVals = [-1000,50,100,150,300,500,1000,2000];
   const quick = quickVals.map(v=>{
     if(v===-1000) return `<button type="button" onclick="quickStealTutto()">−1000<small style="display:block;font-size:.6rem;font-weight:700;opacity:.8">vom Ersten</small></button>`;
     return `<button type="button" onclick="quickAddTutto(${v})">${v>0?'+':''}${fmtNum(v)}</button>`;
@@ -1931,20 +1934,26 @@ function quickStealTutto(){
   liveTotals.forEach((t,i)=>{ if(t>liveTotals[bestIdx]) bestIdx=i; });
   const curIdx = gameTutto.currentIdx;
   const curName = gameTutto.players[curIdx];
-  if(bestIdx===curIdx){
-    // Wer bereits Spitzenreiter:in ist, kann sich nicht selbst bestehlen —
-    // weder Gutschrift noch Abzug passieren in diesem Fall.
-    addLogTutto(`<b>${esc(curName)}</b> ist bereits Spitzenreiter:in — der Punkteklau geht ins Leere.`);
+  const leaderName = gameTutto.players[bestIdx];
+  const question = bestIdx===curIdx
+    ? `${curName} ist schon Spitzenreiter:in — der Klau geht ins Leere. Trotzdem bestätigen?`
+    : `${curName} bekommt 1000 Punkte gutgeschrieben, ${leaderName} (Spitzenreiter:in) verliert 1000. Fortfahren?`;
+  showConfirm(question, ()=>{
+    if(bestIdx===curIdx){
+      // Wer bereits Spitzenreiter:in ist, kann sich nicht selbst bestehlen —
+      // weder Gutschrift noch Abzug passieren in diesem Fall.
+      addLogTutto(`<b>${esc(curName)}</b> ist bereits Spitzenreiter:in — der Punkteklau geht ins Leere.`);
+      saveTutto();
+      render();
+      showAlert(`Du bist schon Spitzenreiter:in — es passiert nichts.`);
+      return;
+    }
+    gameTutto.roundInProgress[bestIdx] -= 1000;
+    gameTutto.pendingInput = (gameTutto.pendingInput||0) + 1000;
+    addLogTutto(`<b>${esc(curName)}</b> klaut <b>1000</b> Punkte vom Spitzenreiter <b>${esc(leaderName)}</b>.`);
     saveTutto();
     render();
-    showAlert(`Du bist schon Spitzenreiter:in — es passiert nichts.`);
-    return;
-  }
-  gameTutto.roundInProgress[bestIdx] -= 1000;
-  gameTutto.pendingInput = (gameTutto.pendingInput||0) + 1000;
-  addLogTutto(`<b>${esc(curName)}</b> klaut <b>1000</b> Punkte vom Spitzenreiter <b>${esc(gameTutto.players[bestIdx])}</b>.`);
-  saveTutto();
-  render();
+  });
 }
 
 function finalizeTuttoRound(){
